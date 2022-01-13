@@ -1,8 +1,13 @@
 test: clean
-	go test -race -covermode atomic -coverprofile coverage.out ./...
+	go test -race -coverprofile coverage.out ./...
 
 coverage: test
 	go tool cover -html=coverage.out
+
+bench: install-benchstat
+	go test -timeout 3h -count=5 -run=xxx -bench=BenchmarkPoolOverhead ./... | tee stat.txt
+	benchstat stat.txt
+	benchstat -csv stat.txt > stat.csv
 
 lint: install-golangci-lint
 	golangci-lint run
@@ -14,6 +19,9 @@ clean:
 	@go clean
 	@rm -f profile.out
 	@rm -f coverage.out
+
+install-benchstat:
+	@which benchstat || go install golang.org/x/perf/cmd/benchstat@latest
 
 install-golangci-lint:
 	@which golangci-lint || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.43.0
